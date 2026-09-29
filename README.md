@@ -1,337 +1,522 @@
-Improved Sentiment Analysis of Autism-Affected Children
+# Sentiment Analysis using NLP and Quantum Machine Learning
 
-Using NLP + Quantum Machine Learning
+A hybrid **Natural Language Processing (NLP) and Quantum Machine Learning (QML)** project for sentiment classification of autism and mental-health-related behavioral statements.
 
-This project explores **sentiment analysis of autism-related behavioral statements** using a hybrid pipeline combining **Natural Language Processing (NLP)** and **Quantum Machine Learning (QML)**.
-
-The system filters autism-related text, performs linguistic preprocessing, generates TF-IDF features, reduces dimensionality using PCA, and then compares performance between:
-
-* **Classical Machine Learning model (Linear SVM)**
-* **Quantum Variational Classifier (VQC) using Qiskit**
-
-The goal is to analyze **emotional sentiment patterns in autism-related communication** and evaluate whether **quantum ML can compete with classical models** on real-world NLP tasks.
+The project combines **weakly supervised sentiment labeling, text preprocessing, TF-IDF, Transformer-based sentence embeddings, dimensionality reduction, quantum feature encoding, and classical machine learning** to investigate sentiment classification using both classical and quantum-enhanced approaches.
 
 ---
 
-# Project Pipeline
+## 📌 Project Overview
 
-```
-Dataset
-   ↓
-Autism-related text filtering
-   ↓
-Text preprocessing
-   ↓
-TF-IDF Feature Extraction
-   ↓
-Dimensionality Reduction (PCA)
-   ↓
-Model Training
-   ├── Classical Model (Linear SVM)
-   └── Quantum Model (Variational Quantum Classifier)
-   ↓
-Performance Comparison
+The dataset contains behavioral statements related to different mental-health conditions. While the original dataset provides condition/status labels, it does not directly provide sentiment labels.
+
+To build a sentiment-analysis pipeline, a pretrained Transformer-based sentiment model was used to generate **weak sentiment labels**:
+
+* **Negative**
+* **Neutral**
+* **Positive**
+
+Low-confidence predictions were filtered to improve the reliability of the generated labels.
+
+The project then follows two main approaches:
+
+1. **Classical NLP and Machine Learning**
+2. **Hybrid Quantum-Classical Machine Learning**
+
+---
+
+## 🎯 Objectives
+
+* Build an automated sentiment classification pipeline for behavioral text.
+* Apply NLP preprocessing techniques to clean and normalize textual data.
+* Generate weak sentiment labels using a pretrained Transformer model.
+* Establish classical ML baselines using TF-IDF representations.
+* Generate semantic sentence embeddings using a Transformer model.
+* Reduce high-dimensional embeddings using PCA for quantum processing.
+* Encode classical features into an 8-qubit quantum circuit.
+* Extract quantum-generated features using circuit measurements.
+* Evaluate classification performance using multiple metrics.
+
+---
+
+## 🗂️ Dataset
+
+The project uses a dataset containing behavioral statements and their associated mental-health-related status.
+
+The original dataset contains approximately **53,000 records**.
+
+After preprocessing and duplicate removal, approximately **50,204 usable statements** were obtained.
+
+### Original Dataset Structure
+
+| Column      | Description                                            |
+| ----------- | ------------------------------------------------------ |
+| `statement` | Behavioral or mental-health-related textual statement  |
+| `status`    | Original category/status associated with the statement |
+
+The original `status` column was **not used as the sentiment target** because it represents mental-health-related categories rather than sentiment.
+
+---
+
+## 🧠 Sentiment Label Generation
+
+Since explicit sentiment labels were not available, a pretrained sentiment model was used for **weak supervision**.
+
+### Model
+
+`cardiffnlp/twitter-roberta-base-sentiment-latest`
+
+The model generates:
+
+* Negative
+* Neutral
+* Positive
+
+along with a confidence score.
+
+A confidence threshold of **0.60** was applied, retaining predictions with sufficient model confidence.
+
+After confidence filtering, approximately **41,902 samples** remained.
+
+### Important Note
+
+The sentiment labels are **automatically generated pseudo-labels**, rather than manually annotated ground truth. Therefore, the results should be interpreted as an experimental sentiment-classification study rather than a clinically validated classification system.
+
+---
+
+## 🔄 Project Pipeline
+
+```text
+Raw Dataset
+     │
+     ▼
+Data Cleaning
+     │
+     ▼
+Text Preprocessing
+     │
+     ▼
+Weak Sentiment Labeling
+     │
+     ▼
+Confidence Filtering
+     │
+     ▼
+Train / Test Split
+     │
+     ├──────────────────────────┐
+     ▼                          ▼
+TF-IDF                    Transformer Embeddings
+     │                          │
+     ▼                          ▼
+Classical ML                   PCA
+     │                          │
+     │                       384 → 8
+     │                          │
+     │                          ▼
+     │                   Quantum Encoding
+     │                          │
+     │                          ▼
+     │                   Quantum Circuit
+     │                          │
+     │                          ▼
+     │                   Quantum Features
+     │                          │
+     │                          ▼
+     │                   Classical Classifier
+     │
+     ▼
+Evaluation & Comparison
 ```
 
 ---
 
-# Features
+# 🔧 Methodology
 
-* Autism-specific text filtering using domain keywords
-* NLP preprocessing using **NLTK**
-* TF-IDF vectorization
-* Dimensionality reduction using **PCA**
-* Classical baseline using **Linear Support Vector Machine**
-* Quantum classifier using **Qiskit Variational Quantum Classifier**
-* Performance evaluation using:
+## 1. Data Preprocessing
 
-  * Accuracy
-  * Precision
-  * Recall
-  * F1-Score
+The textual data was cleaned using several preprocessing operations:
 
----
+* Conversion to lowercase
+* Removal of URLs
+* Removal of unnecessary special characters
+* Whitespace normalization
+* Removal of very short statements
+* Duplicate removal
 
-# Dataset
-
-Dataset file used:
-
-```
-AutismData.csv
-```
-
-Expected column:
-
-```
-statement
-```
-
-The dataset is filtered to keep only **autism-related statements** using keywords such as:
-
-```
-autism
-autistic
-asd
-spectrum
-sensory
-meltdown
-stimming
-communication
-social
-```
+This produces cleaner and more consistent text for subsequent NLP processing.
 
 ---
 
-# Text Preprocessing
+## 2. Train-Test Split
 
-Steps performed:
+The labeled dataset was divided into:
 
-1. Lowercasing
-2. Removing special characters
-3. Tokenization
-4. Stopword removal
-5. Removing short/noisy samples
+* **80% training data**
+* **20% testing data**
+
+A stratified split was used to preserve the relative distribution of sentiment classes across the training and testing sets.
+
+---
+
+# 📊 Classical NLP Approach
+
+## 3. TF-IDF Feature Extraction
+
+The first representation used was **Term Frequency-Inverse Document Frequency (TF-IDF)**.
+
+Configuration:
+
+```text
+Maximum features: 15,000
+N-grams: Unigrams + Bigrams
+Minimum document frequency: 2
+Sublinear TF: Enabled
+```
+
+Using both unigrams and bigrams allows the model to capture individual words as well as short word combinations.
+
+For example:
+
+```text
+"I feel anxious"
+```
+
+can produce features such as:
+
+```text
+feel
+anxious
+feel anxious
+```
+
+---
+
+## 4. Classical Classification
+
+Two classical classifiers were evaluated:
+
+### Logistic Regression
+
+Used as a linear baseline for multi-class sentiment classification.
+
+### Linear Support Vector Machine
+
+A Linear SVM was used because linear models are particularly effective with high-dimensional sparse text representations such as TF-IDF.
+
+Class balancing was applied to reduce the effect of the imbalanced sentiment distribution.
+
+---
+
+# 🤖 Transformer-Based Representation
+
+## 5. Sentence Embeddings
+
+A pretrained Sentence Transformer was used:
+
+```text
+all-MiniLM-L6-v2
+```
+
+Each statement was converted into a **384-dimensional dense embedding**.
+
+Unlike TF-IDF, which primarily represents lexical importance, Transformer embeddings provide a dense representation intended to capture semantic information from the sentence.
 
 Example:
 
-```
-Original:
-"My autistic child had a sensory meltdown today"
+```text
+"I feel terrible"
 
-Cleaned:
-"autistic child sensory meltdown today"
+        ↓
+
+384-dimensional embedding
 ```
+
+The embeddings were then used with a classical Logistic Regression classifier.
 
 ---
 
-# Sentiment Label Generation
+# ⚛️ Quantum Machine Learning
 
-Sentiment labels are automatically generated using **VADER sentiment analysis**.
+## 6. Dimensionality Reduction with PCA
 
+The Transformer model produces 384-dimensional embeddings, which are too large for the small quantum circuit used in this project.
+
+Therefore, **Principal Component Analysis (PCA)** was applied:
+
+```text
+384 dimensions
+      ↓
+     PCA
+      ↓
+8 dimensions
 ```
-compound score ≥ 0  → Positive
-compound score < 0  → Negative
-```
 
-This converts the dataset into a **binary classification task**.
+The first eight principal components retained approximately **25.42% of the total variance**.
+
+The resulting eight-dimensional representation was then scaled to a suitable range for quantum rotation gates.
 
 ---
 
-# Feature Engineering
+## 7. Quantum Feature Encoding
 
-### TF-IDF Vectorization
+An **8-qubit quantum circuit** was designed to process the reduced feature representation.
 
+The classical features were encoded using parameterized quantum rotations.
+
+Conceptually:
+
+```text
+Classical Features
+       │
+       ▼
+   8 Values
+       │
+       ▼
+RY / RZ Rotations
+       │
+       ▼
+Quantum State
 ```
-max_features = 600
-ngram_range = (1,1)
-min_df = 3
-sublinear_tf = True
-```
 
-### Dimensionality Reduction
-
-Since quantum circuits require **low-dimensional inputs**, PCA is applied.
-
-```
-PCA components = 8
-```
+Each input feature is mapped to a quantum rotation angle.
 
 ---
 
-# Models Used
+## 8. Quantum Circuit Architecture
 
-## 1. Classical Model
+The quantum circuit consists of:
 
-Algorithm:
+* 8 qubits
+* Parameterized `RY` rotations
+* Parameterized `RZ` rotations
+* Ring-based entanglement using `CX` gates
+* Measurement-based feature extraction
 
+The ring entanglement structure connects neighboring qubits:
+
+```text
+Q0 ── Q1 ── Q2 ── Q3
+│                 │
+Q7 ── Q6 ── Q5 ── Q4
 ```
-Linear Support Vector Classifier (LinearSVC)
-```
 
-Parameters:
-
-```
-class_weight = balanced
-```
-
-Advantages:
-
-* Strong baseline for NLP tasks
-* Efficient on high-dimensional TF-IDF features
+This allows interactions between the encoded features through quantum entanglement.
 
 ---
 
-## 2. Quantum Model
+## 9. Quantum Feature Extraction
 
-Quantum algorithm used:
+After executing the quantum circuit, measurements are collected over multiple shots.
 
-```
-Variational Quantum Classifier (VQC)
-```
+The measurement results are converted into **Z-axis expectation values**.
 
-Components:
+Conceptually:
 
-**Feature Map**
-
-```
-ZZFeatureMap
-feature_dimension = 8
-entanglement = linear
-reps = 1
-```
-
-**Optimizer**
-
-```
-COBYLA
-maxiter = 80
+```text
+Quantum Circuit
+      │
+      ▼
+Measurements
+      │
+      ▼
+Expectation Values
+      │
+      ▼
+8-Dimensional Quantum Feature Vector
 ```
 
-**Sampler Backend**
+These quantum-generated features can then be supplied to a conventional classical classifier.
 
-```
-Qiskit Aer Sampler
-```
+This creates a **hybrid quantum-classical architecture**.
 
 ---
 
-# Results
+# 📈 Results
 
-## Classical NLP Model
+The project compares multiple representations and classification approaches.
 
-Accuracy:
+| Approach           | Representation           | Classifier          |   Accuracy |   Macro F1 |
+| ------------------ | ------------------------ | ------------------- | ---------: | ---------: |
+| Classical Baseline | TF-IDF                   | Logistic Regression |     84.72% |     0.7532 |
+| Classical Baseline | TF-IDF                   | Linear SVM          | **87.48%** | **0.7673** |
+| Transformer        | 384-D Sentence Embedding | Logistic Regression |     85.43% |     0.7611 |
 
-```
-65.59%
-```
-
-Classification Report:
-
-```
-Negative
-Precision: 0.76
-Recall:    0.65
-F1-score:  0.70
-
-Positive
-Precision: 0.54
-Recall:    0.67
-F1-score:  0.60
-```
+The classical TF-IDF + Linear SVM pipeline achieved the strongest performance among the primary classification approaches evaluated.
 
 ---
 
-## Quantum Sentiment Model
+# 📏 Evaluation Metrics
 
-Accuracy:
+Multiple metrics were considered because the sentiment classes are not perfectly balanced.
 
+### Accuracy
+
+Measures the overall proportion of correctly classified samples.
+
+```text
+Accuracy =
+Correct Predictions / Total Predictions
 ```
-62.38%
+
+### Precision
+
+Measures how many samples predicted as a particular class actually belong to that class.
+
+### Recall
+
+Measures how many samples belonging to a particular class were correctly identified.
+
+### F1 Score
+
+Combines precision and recall:
+
+```text
+F1 = 2 × Precision × Recall
+          -----------------
+          Precision + Recall
 ```
 
-Classification Report:
+### Macro F1
 
-```
-Negative
-Precision: 0.67
-Recall:    0.79
-F1-score:  0.72
+F1 is calculated independently for each class and then averaged, giving equal importance to each sentiment class.
 
-Positive
-Precision: 0.51
-Recall:    0.36
-F1-score:  0.42
-```
+This makes Macro F1 useful when evaluating imbalanced multi-class classification problems.
 
 ---
 
-# Key Observations
+# 🛠️ Technologies Used
 
-* Classical **SVM performs slightly better overall**.
-* Quantum model shows **strong recall for negative sentiment**.
-* Performance gap is relatively small considering **quantum hardware limitations**.
-* Demonstrates the **potential of hybrid classical-quantum NLP pipelines**.
-
----
-
-# Installation
-
-Clone the repository:
-
-```
-git clone https://github.com/yourusername/autism-sentiment-qml.git
-cd autism-sentiment-qml
-```
-
-Install dependencies:
-
-```
-pip install pandas numpy nltk scikit-learn qiskit qiskit-machine-learning
-```
-
-Download NLTK resources:
-
-```
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('vader_lexicon')
-```
-
----
-
-# Running the Project
-
-Place the dataset in the project folder:
-
-```
-AutismData.csv
-```
-
-Run the notebook or script:
-
-```
-python autism_sentiment_qml.py
-```
-
----
-
-# Technologies Used
+### Programming
 
 * Python
-* NLTK
-* Scikit-learn
-* Qiskit
-* Qiskit Machine Learning
-* NumPy
+
+### NLP & Machine Learning
+
 * Pandas
+* NumPy
+* Scikit-learn
+* Transformers
+* Sentence Transformers
+
+### Quantum Machine Learning
+
+* Qiskit
+* Qiskit Aer
+* Qiskit Machine Learning
+
+### Visualization & Analysis
+
+* Matplotlib
+* Seaborn
+* Jupyter Notebook
 
 ---
 
-# Research Motivation
+# 📁 Project Structure
 
-Understanding emotional patterns in autism-related communication can support:
+```text
+Sentiment-Analysis-NLP-QML/
+│
+├── rp2.ipynb
+├── AutismData.xls
+├── README.md
+└── requirements.txt
+```
 
-* behavioral research
-* mental health analysis
-* assistive technologies
-* therapeutic support systems
-
-This project investigates whether **quantum machine learning techniques can complement classical NLP models** in such domains.
-
----
-
-# Future Improvements
-
-* Use **transformer embeddings (BERT / RoBERTa)**
-* Use **quantum kernels**
-* Increase **quantum circuit depth**
-* Try **hybrid classical-quantum pipelines**
-* Expand dataset with **clinical or behavioral corpora**
+> Dataset files may need to be obtained separately depending on redistribution and licensing restrictions.
 
 ---
 
-# License
+# 🚀 How to Run
 
-MIT License
+## 1. Clone the repository
 
+```bash
+git clone <repository-url>
+cd Sentiment-Analysis-NLP-QML
+```
+
+## 2. Install dependencies
+
+```bash
+pip install pandas numpy scikit-learn
+pip install transformers sentence-transformers
+pip install qiskit qiskit-aer qiskit-machine-learning
+pip install matplotlib seaborn jupyter
+```
+
+## 3. Launch Jupyter Notebook
+
+```bash
+jupyter notebook
+```
+
+Open:
+
+```text
+rp2.ipynb
+```
+
+and execute the notebook cells sequentially.
+
+---
+
+# 💡 Key Concepts Demonstrated
+
+This project demonstrates practical experience with:
+
+* Natural Language Processing
+* Weak supervision
+* Sentiment classification
+* TF-IDF
+* N-gram features
+* Transformer sentence embeddings
+* Dimensionality reduction using PCA
+* Classical machine learning
+* Support Vector Machines
+* Logistic Regression
+* Quantum feature encoding
+* Quantum circuits
+* Qubits and quantum gates
+* Quantum entanglement
+* Measurement and expectation values
+* Hybrid quantum-classical machine learning
+* Model evaluation and comparison
+
+---
+
+# ⚠️ Limitations
+
+* Sentiment labels are generated through weak supervision rather than manual annotation.
+* The source text is from a mental-health-related domain, while the sentiment model is a general pretrained model.
+* PCA reduces the 384-dimensional representation to only eight dimensions, resulting in information loss.
+* Quantum experiments were performed using a simulator rather than physical quantum hardware.
+* Quantum feature extraction is computationally more expensive than the classical feature-extraction pipeline.
+
+---
+
+# 🔮 Future Improvements
+
+Potential extensions include:
+
+* Creating a manually annotated sentiment dataset.
+* Using a domain-specific sentiment model.
+* Experimenting with different embedding models.
+* Evaluating different PCA dimensionalities.
+* Exploring alternative quantum feature maps.
+* Testing different quantum circuit architectures.
+* Evaluating the approach on real quantum hardware.
+* Investigating quantum noise and error mitigation.
+* Comparing additional classical and quantum classifiers.
+
+---
+
+# 👨‍💻 Author
+
+**Kushagra Bhagoliwal**
+
+B.Tech — Computer Science Engineering (AI & ML)
+VIT-AP University, Amaravati
+
+**Interests:** Machine Learning • NLP • Generative AI • Quantum Machine Learning • Software Development
